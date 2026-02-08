@@ -1,18 +1,14 @@
 # Drawbridge
 
-Real-time diagram server that lets Claude (or any AI) draw on an Excalidraw canvas via HTTP API.
-
-Push JSON elements to the server, and they appear instantly on a shared Excalidraw canvas in any browser. Supports progressive drawing (elements appear one at a time), camera control, text labels inside shapes, arrow bindings, background zones, and more.
-
-Includes a ready-to-use [Claude Code skill](#using-with-claude-code) so Claude knows how to draw diagrams out of the box.
+**A Claude Code skill + real-time diagram server.** Ask Claude to draw a flowchart, architecture diagram, or dependency map — and watch it appear live on an Excalidraw canvas in your browser.
 
 ![Drawbridge demo — elements appearing in real-time as an AI pushes them](demo.gif)
 
 ## Table of Contents
 
+- [Using with Claude Code](#using-with-claude-code)
 - [How It Works](#how-it-works)
 - [Quick Start](#quick-start)
-- [Using with Claude Code](#using-with-claude-code)
 - [Configuration](#configuration)
 - [API Reference](#api-reference)
 - [Element Format](#element-format)
@@ -24,42 +20,6 @@ Includes a ready-to-use [Claude Code skill](#using-with-claude-code) so Claude k
 - [Frontend Features](#frontend-features)
 - [Architecture](#architecture)
 - [Credits](#credits)
-
-## How It Works
-
-```
-AI / Script ──HTTP POST──> Drawbridge Server ──WebSocket──> Browser (Excalidraw)
-```
-
-1. **Server** runs Express (HTTP API) + WebSocket on configurable ports
-2. **Browser** loads Excalidraw and connects via WebSocket to a session
-3. **AI/Script** pushes simplified "skeleton" elements via HTTP — the browser converts them to full Excalidraw elements using `convertToExcalidrawElements` with proper font loading and text measurement
-4. Elements appear in real-time on every connected browser
-
-## Quick Start
-
-```bash
-git clone https://github.com/alexknowshtml/drawbridge.git
-cd drawbridge
-npm install
-npm run build
-npm start           # Starts API server on :3062, WebSocket on :3061
-npx serve dist      # Serve the frontend on :3000 (or any static file server)
-```
-
-Open `http://localhost:3000/#my-session` in a browser, then push elements:
-
-```bash
-curl -X POST http://localhost:3062/api/session/my-session/elements \
-  -H "Content-Type: application/json" \
-  -d '{
-    "elements": [
-      { "type": "rectangle", "id": "b1", "x": 100, "y": 100, "width": 200, "height": 80,
-        "roundness": { "type": 3 }, "backgroundColor": "#a5d8ff", "fillStyle": "solid",
-        "label": { "text": "Hello World", "fontSize": 20 } }
-    ]
-  }'
-```
 
 ## Using with Claude Code
 
@@ -98,6 +58,42 @@ After installing the skill, ask Claude:
 > "Draw a diagram of a three-tier web architecture"
 
 Claude will push elements to your Drawbridge server and they'll appear live in your browser.
+
+## How It Works
+
+```
+AI / Script ──HTTP POST──> Drawbridge Server ──WebSocket──> Browser (Excalidraw)
+```
+
+1. **Server** runs Express (HTTP API) + WebSocket on configurable ports
+2. **Browser** loads Excalidraw and connects via WebSocket to a session
+3. **AI/Script** pushes simplified "skeleton" elements via HTTP — the browser converts them to full Excalidraw elements using `convertToExcalidrawElements` with proper font loading and text measurement
+4. Elements appear in real-time on every connected browser
+
+## Quick Start
+
+```bash
+git clone https://github.com/alexknowshtml/drawbridge.git
+cd drawbridge
+npm install
+npm run build
+npm start           # Starts API server on :3062, WebSocket on :3061
+npx serve dist      # Serve the frontend on :3000 (or any static file server)
+```
+
+Open `http://localhost:3000/#my-session` in a browser, then push elements:
+
+```bash
+curl -X POST http://localhost:3062/api/session/my-session/elements \
+  -H "Content-Type: application/json" \
+  -d '{
+    "elements": [
+      { "type": "rectangle", "id": "b1", "x": 100, "y": 100, "width": 200, "height": 80,
+        "roundness": { "type": 3 }, "backgroundColor": "#a5d8ff", "fillStyle": "solid",
+        "label": { "text": "Hello World", "fontSize": 20 } }
+    ]
+  }'
+```
 
 ## Configuration
 
