@@ -4,7 +4,26 @@ Real-time diagram server that lets Claude (or any AI) draw on an Excalidraw canv
 
 Push JSON elements to the server, and they appear instantly on a shared Excalidraw canvas in any browser. Supports progressive drawing (elements appear one at a time), camera control, text labels inside shapes, arrow bindings, background zones, and more.
 
+Includes a ready-to-use [Claude Code skill](#using-with-claude-code) so Claude knows how to draw diagrams out of the box.
+
 ![Drawbridge demo — elements appearing in real-time as an AI pushes them](demo.gif)
+
+## Table of Contents
+
+- [How It Works](#how-it-works)
+- [Quick Start](#quick-start)
+- [Using with Claude Code](#using-with-claude-code)
+- [Configuration](#configuration)
+- [API Reference](#api-reference)
+- [Element Format](#element-format)
+- [Color Palette](#color-palette)
+- [Sizing Rules](#sizing-rules)
+- [Drawing Order](#drawing-order)
+- [Complete Examples](#complete-examples)
+- [Rendering to PNG/SVG](#rendering-to-pngsvg)
+- [Frontend Features](#frontend-features)
+- [Architecture](#architecture)
+- [Credits](#credits)
 
 ## How It Works
 
@@ -41,6 +60,44 @@ curl -X POST http://localhost:3062/api/session/my-session/elements \
     ]
   }'
 ```
+
+## Using with Claude Code
+
+Drawbridge includes a ready-to-use Claude Code skill that teaches Claude how to generate and push diagrams. Once installed, Claude will automatically use Drawbridge when you ask for flowcharts, architecture diagrams, dependency maps, or any visual diagram.
+
+### Install the Skill
+
+Copy the skill file into your project's `.claude/skills/` directory:
+
+```bash
+# From your project root
+mkdir -p .claude/skills/drawbridge
+cp /path/to/drawbridge/skills/SKILL.md .claude/skills/drawbridge/SKILL.md
+```
+
+Or if you cloned the repo:
+
+```bash
+mkdir -p .claude/skills/drawbridge
+cp drawbridge/skills/SKILL.md .claude/skills/drawbridge/SKILL.md
+```
+
+### What the Skill Includes
+
+- Complete element format reference (labeled shapes, arrows, bindings, zones)
+- Color palette with semantic meanings
+- Sizing rules and font minimums
+- Drawing order for progressive streaming
+- Full examples (connected boxes, multi-tier architecture)
+- Render-to-PNG/SVG workflow
+
+### Try It
+
+After installing the skill, ask Claude:
+
+> "Draw a diagram of a three-tier web architecture"
+
+Claude will push elements to your Drawbridge server and they'll appear live in your browser.
 
 ## Configuration
 
@@ -371,37 +428,6 @@ The renderer handles both skeleton elements (with `label`, `start`/`end`) and fu
 - **Camera control** — `cameraUpdate` pseudo-elements auto-frame the viewport on the diagram
 - **WebSocket reconnection** — Automatically reconnects after 5 seconds if the connection drops
 
-## Using with Claude Code
-
-Drawbridge includes a ready-to-use Claude Code skill that teaches Claude how to generate and push diagrams.
-
-### Install the Skill
-
-Copy the skill folder into your project's `.claude/skills/` directory:
-
-```bash
-# From your project root
-mkdir -p .claude/skills
-cp -r /path/to/drawbridge/skills/SKILL.md .claude/skills/drawbridge/SKILL.md
-```
-
-Or if you cloned the repo:
-
-```bash
-mkdir -p .claude/skills/drawbridge
-cp drawbridge/skills/SKILL.md .claude/skills/drawbridge/SKILL.md
-```
-
-The skill includes:
-- Complete element format reference (labeled shapes, arrows, bindings, zones)
-- Color palette with semantic meanings
-- Sizing rules and font minimums
-- Drawing order for progressive streaming
-- Full examples (connected boxes, multi-tier architecture)
-- Render-to-PNG/SVG workflow
-
-Once installed, Claude will automatically use Drawbridge when you ask for flowcharts, architecture diagrams, dependency maps, or any visual diagram.
-
 ## Architecture
 
 ```
@@ -412,6 +438,8 @@ drawbridge/
     main.tsx        # React entry point
   scripts/
     render.ts       # Playwright-based PNG/SVG renderer
+  skills/
+    SKILL.md        # Claude Code skill (copy to .claude/skills/drawbridge/)
   index.html        # Frontend shell
   vite.config.ts    # Vite build configuration
 ```
