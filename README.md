@@ -373,21 +373,34 @@ The renderer handles both skeleton elements (with `label`, `start`/`end`) and fu
 
 ## Using with Claude Code
 
-Add Drawbridge to your Claude Code skill docs so Claude knows how to generate diagrams. Here's the key instruction pattern:
+Drawbridge includes a ready-to-use Claude Code skill that teaches Claude how to generate and push diagrams.
 
+### Install the Skill
+
+Copy the skill folder into your project's `.claude/skills/` directory:
+
+```bash
+# From your project root
+mkdir -p .claude/skills
+cp -r /path/to/drawbridge/skills/SKILL.md .claude/skills/drawbridge/SKILL.md
 ```
-Push elements to the live viewer via HTTP API:
-POST http://localhost:3062/api/session/SESSION_NAME/elements
 
-Use the label property on shapes for text:
-{ "type": "rectangle", "label": { "text": "...", "fontSize": 20 } }
+Or if you cloned the repo:
 
-Use start/end for arrow bindings:
-{ "type": "arrow", "start": { "id": "source" }, "end": { "id": "target" } }
-
-Include a cameraUpdate to auto-frame the view:
-{ "type": "cameraUpdate", "x": 0, "y": 0, "width": 800, "height": 600 }
+```bash
+mkdir -p .claude/skills/drawbridge
+cp drawbridge/skills/SKILL.md .claude/skills/drawbridge/SKILL.md
 ```
+
+The skill includes:
+- Complete element format reference (labeled shapes, arrows, bindings, zones)
+- Color palette with semantic meanings
+- Sizing rules and font minimums
+- Drawing order for progressive streaming
+- Full examples (connected boxes, multi-tier architecture)
+- Render-to-PNG/SVG workflow
+
+Once installed, Claude will automatically use Drawbridge when you ask for flowcharts, architecture diagrams, dependency maps, or any visual diagram.
 
 ## Architecture
 
