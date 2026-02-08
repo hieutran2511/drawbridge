@@ -4,6 +4,8 @@ Real-time diagram server that lets Claude (or any AI) draw on an Excalidraw canv
 
 Push JSON elements to the server, and they appear instantly on a shared Excalidraw canvas in any browser. Supports progressive drawing (elements appear one at a time), camera control, text labels inside shapes, arrow bindings, background zones, and more.
 
+![Drawbridge demo — elements appearing in real-time as an AI pushes them](demo.gif)
+
 ## How It Works
 
 ```
