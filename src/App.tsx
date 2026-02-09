@@ -310,8 +310,9 @@ export default function App() {
       <div
         style={{
           position: 'absolute',
-          top: 8,
-          right: 8,
+          bottom: 8,
+          left: '50%',
+          transform: 'translateX(-50%)',
           zIndex: 10,
           background: connected ? '#d3f9d8' : '#ffe3e3',
           color: connected ? '#2f9e44' : '#c92a2a',
