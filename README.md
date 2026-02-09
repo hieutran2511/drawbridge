@@ -17,6 +17,7 @@
 - [Drawing Order](#drawing-order)
 - [Complete Examples](#complete-examples)
 - [Rendering to PNG/SVG](#rendering-to-pngsvg)
+- [Persistence](#persistence)
 - [Frontend Features](#frontend-features)
 - [Architecture](#architecture)
 - [Credits](#credits)
@@ -101,6 +102,7 @@ curl -X POST http://localhost:3062/api/session/my-session/elements \
 |---|---|---|
 | `DRAWBRIDGE_API_PORT` | `3062` | HTTP API port |
 | `DRAWBRIDGE_WS_PORT` | `3061` | WebSocket port |
+| `DRAWBRIDGE_DATA_DIR` | `./data` | Directory for persistent session data |
 
 The frontend connects to WebSocket on `window.location.hostname:3061` by default. Modify `src/App.tsx` to change this.
 
@@ -132,7 +134,15 @@ curl -X POST http://localhost:3062/api/session/demo/append \
 
 #### `POST /api/session/:id/clear`
 
-Clear all elements from a session.
+Clear all elements and delete persisted data for a session.
+
+#### `POST /api/session/:id/undo`
+
+Undo the last operation. Replays the append-only log minus the last entry.
+
+```bash
+curl -X POST http://localhost:3062/api/session/demo/undo
+```
 
 #### `POST /api/session/:id/viewport`
 
@@ -416,6 +426,20 @@ npm run render -- /tmp/diagram.excalidraw /tmp/diagram.png
 
 The renderer handles both skeleton elements (with `label`, `start`/`end`) and fully-resolved Excalidraw elements. Uses headless Chromium with Excalidraw 0.18 for faithful hand-drawn style output. Takes about 5-8 seconds.
 
+## Persistence
+
+Sessions are persisted to disk automatically using an **append-only log + snapshot** strategy:
+
+- Every mutation (set, append, update, clear) is appended as a single JSON line to `data/{session}.log`
+- After every 20 operations, a full snapshot is written to `data/{session}.snapshot.json` and the log is truncated
+- On server restart, sessions are restored from the latest snapshot + replayed log entries
+- Snapshots use atomic write (write to `.tmp`, then rename) to prevent corruption
+- The browser also caches elements in `localStorage` for instant display while reconnecting
+
+**Undo** works by removing the last log entry and rebuilding state from the snapshot + remaining entries. Call `POST /api/session/:id/undo`.
+
+**Clear** deletes all persisted files for that session.
+
 ## Frontend Features
 
 - **Font preloading** — Excalifont and Assistant fonts are loaded before any text measurement, ensuring labels render correctly inside shapes
@@ -423,12 +447,14 @@ The renderer handles both skeleton elements (with `label`, `start`/`end`) and fu
 - **Pencil sounds** — Short sine wave chirps play when elements appear (different frequencies per element type). Requires a user click to activate (browser AudioContext policy)
 - **Camera control** — `cameraUpdate` pseudo-elements auto-frame the viewport on the diagram
 - **WebSocket reconnection** — Automatically reconnects after 5 seconds if the connection drops
+- **localStorage caching** — Elements are cached per session for instant display on page reload
 
 ## Architecture
 
 ```
 drawbridge/
   server.js         # Express + WebSocket server
+  data/             # Persisted session data (auto-created)
   src/
     App.tsx         # React frontend with Excalidraw component
     main.tsx        # React entry point

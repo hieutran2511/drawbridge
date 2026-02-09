@@ -211,6 +211,7 @@ API endpoints:
 - `POST /api/session/:id/elements` — Replace all elements
 - `POST /api/session/:id/append` — Add elements to existing
 - `POST /api/session/:id/clear` — Clear canvas
+- `POST /api/session/:id/undo` — Undo last operation
 - `GET /api/session/:id` — Get current elements
 
 ### 2. Save as .excalidraw file
