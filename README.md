@@ -102,8 +102,14 @@ curl -X POST http://localhost:3062/api/session/my-session/elements \
 |---|---|---|
 | `DRAWBRIDGE_PORT` | `3062` | HTTP + WebSocket port |
 | `DRAWBRIDGE_DATA_DIR` | `./data` | Directory for persistent session data |
+| `DO_SPACES_ACCESS_KEY` | — | DigitalOcean Spaces access key (enables image storage) |
+| `DO_SPACES_SECRET_KEY` | — | DigitalOcean Spaces secret key |
+| `DO_SPACES_BUCKET` | — | Spaces bucket name |
+| `DO_SPACES_REGION` | `nyc3` | Spaces region |
 
 HTTP API and WebSocket run on the same port. The frontend auto-detects: on HTTPS (production), it connects to the same origin; on HTTP (local dev via Vite), it connects to port 3062.
+
+When the `DO_SPACES_*` variables are set, images dropped onto the canvas are uploaded to DO Spaces and persist across page refreshes. Without them, the server runs fine but images are ephemeral (lost on reload).
 
 ### Container Deployment
 
@@ -170,6 +176,24 @@ curl -X POST http://localhost:3062/api/session/demo/viewport \
 
 Get current session state (elements, appState, viewport).
 
+#### `POST /api/session/:id/files`
+
+Upload an image file to DO Spaces (requires Spaces credentials).
+
+```bash
+curl -X POST http://localhost:3062/api/session/demo/files \
+  -H "Content-Type: application/json" \
+  -d '{"fileId": "abc123", "dataURL": "data:image/png;base64,...", "mimeType": "image/png"}'
+```
+
+#### `GET /api/session/:id/files`
+
+Get file metadata for a session (CDN URLs, mime types).
+
+#### `GET /api/session/:id/files/:fileId`
+
+Proxy download of a stored image. Serves the file from DO Spaces through the server to avoid CORS issues.
+
 #### `GET /api/sessions`
 
 List all active sessions with element and client counts.
@@ -185,6 +209,8 @@ Connect to `ws://host:3061/ws/:sessionId` for real-time updates. Messages are JS
 - **Server → Client**: `{ type: "elements", elements: [...] }` — full element replacement
 - **Server → Client**: `{ type: "append", elements: [...] }` — new elements added
 - **Server → Client**: `{ type: "viewport", viewport: { x, y, width, height } }` — camera update
+- **Server → Client**: `{ type: "files-meta", files: {...} }` — file metadata on connect (CDN URLs for stored images)
+- **Server → Client**: `{ type: "file-added", file: {...} }` — new image uploaded by another client
 - **Server → Client**: `{ type: "clear" }` — canvas cleared
 - **Client → Server**: `{ type: "update", elements: [...] }` — user edited the canvas
 
@@ -448,6 +474,8 @@ Sessions are persisted to disk automatically using an **append-only log + snapsh
 - Snapshots use atomic write (write to `.tmp`, then rename) to prevent corruption
 - The browser also caches elements in `localStorage` for instant display while reconnecting
 
+**Image storage** — When DO Spaces credentials are configured, images dropped onto the canvas are uploaded to `files/{sessionId}/{fileId}.{ext}` in the Spaces bucket. File metadata (CDN URLs, mime types) is stored locally in `data/{session}.files.json`. On page reload, the browser fetches images through a same-origin proxy endpoint to avoid CORS issues with DO Spaces.
+
 **Undo** works by removing the last log entry and rebuilding state from the snapshot + remaining entries. Call `POST /api/session/:id/undo`.
 
 **Clear** deletes all persisted files for that session.
@@ -460,18 +488,22 @@ Sessions are persisted to disk automatically using an **append-only log + snapsh
 - **Camera control** — `cameraUpdate` pseudo-elements auto-frame the viewport on the diagram
 - **WebSocket reconnection** — Automatically reconnects after 5 seconds if the connection drops
 - **localStorage caching** — Elements are cached per session for instant display on page reload
+- **Image persistence** — Images dropped onto the canvas are uploaded to DO Spaces and reloaded on refresh via a same-origin proxy
 
 ## Architecture
 
 ```
 drawbridge/
   server.js         # Express + WebSocket server
+  lib/
+    spaces-client.js  # DO Spaces upload client
   data/             # Persisted session data (auto-created)
   src/
     App.tsx         # React frontend with Excalidraw component
     main.tsx        # React entry point
   scripts/
     render.ts       # Playwright-based PNG/SVG renderer
+    generate-env.sh # Generate .env from credential store
   skills/
     SKILL.md        # Claude Code skill (copy to .claude/skills/drawbridge/)
   index.html        # Frontend shell
