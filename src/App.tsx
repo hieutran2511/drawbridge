@@ -826,26 +826,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Preview mode banner */}
-      {previewingVersion && !conflict && (
-        <div style={{
-          flexShrink: 0,
-          background: '#fff9db', borderBottom: '2px solid #fab005',
-          padding: '10px 16px', display: 'flex', alignItems: 'center',
-          gap: 12, fontFamily: 'system-ui', fontSize: 13,
-        }}>
-          <span style={{ fontWeight: 600, color: '#856404' }}>
-            Previewing v{previewingVersion}
-          </span>
-          <div style={{ flex: 1 }} />
-          <button onClick={cancelPreview} style={{
-            padding: '5px 14px', borderRadius: 4, border: '1px solid #856404',
-            background: 'transparent', color: '#856404', cursor: 'pointer',
-            fontWeight: 600, fontSize: 12,
-          }}>Cancel preview</button>
-        </div>
-      )}
-
       {/* Canvas area — flex-grows to fill remaining space */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
       {/* History button — matches Excalidraw undo/redo style, positioned beside them */}
@@ -987,6 +967,26 @@ export default function App() {
         }}
       />
       </div>
+
+      {/* Preview mode banner — bottom bar */}
+      {previewingVersion && !conflict && (
+        <div style={{
+          flexShrink: 0,
+          background: '#fff9db', borderTop: '2px solid #fab005',
+          padding: '10px 16px', display: 'flex', alignItems: 'center',
+          gap: 12, fontFamily: 'system-ui', fontSize: 13,
+        }}>
+          <span style={{ fontWeight: 600, color: '#856404' }}>
+            Previewing v{previewingVersion}
+          </span>
+          <div style={{ flex: 1 }} />
+          <button onClick={cancelPreview} style={{
+            padding: '5px 14px', borderRadius: 4, border: '1px solid #856404',
+            background: 'transparent', color: '#856404', cursor: 'pointer',
+            fontWeight: 600, fontSize: 12,
+          }}>Cancel preview</button>
+        </div>
+      )}
     </div>
   );
 }
