@@ -826,12 +826,32 @@ export default function App() {
         </div>
       )}
 
+      {/* Preview mode banner */}
+      {previewingVersion && !conflict && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100,
+          background: '#fff9db', borderBottom: '2px solid #fab005',
+          padding: '10px 16px', display: 'flex', alignItems: 'center',
+          gap: 12, fontFamily: 'system-ui', fontSize: 13,
+        }}>
+          <span style={{ fontWeight: 600, color: '#856404' }}>
+            Previewing v{previewingVersion}
+          </span>
+          <div style={{ flex: 1 }} />
+          <button onClick={cancelPreview} style={{
+            padding: '5px 14px', borderRadius: 4, border: '1px solid #856404',
+            background: 'transparent', color: '#856404', cursor: 'pointer',
+            fontWeight: 600, fontSize: 12,
+          }}>Cancel preview</button>
+        </div>
+      )}
+
       {/* History button — matches Excalidraw undo/redo style, positioned beside them */}
       <button
         onClick={showHistory ? () => { if (previewingVersion) cancelPreview(); setShowHistory(false); } : openHistory}
         title="Version History (Ctrl+H)"
         style={{
-          position: 'absolute', bottom: 80, left: 16, zIndex: 50,
+          position: 'absolute', bottom: 42, left: 100, zIndex: 50,
           width: 36, height: 36, borderRadius: 8,
           border: 'none', background: showHistory ? '#d0ebff' : '#ececf4',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -901,10 +921,17 @@ export default function App() {
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
                     {v.elements && (
-                      <button onClick={() => previewVersion(v.elements!, v.version)} style={{
-                        padding: '2px 8px', borderRadius: 3, border: '1px solid #dee2e6',
-                        background: '#fff', cursor: 'pointer', fontSize: 11, color: '#495057',
-                      }}>Preview</button>
+                      isPreviewing ? (
+                        <button onClick={cancelPreview} style={{
+                          padding: '2px 8px', borderRadius: 3, border: '1px solid #856404',
+                          background: '#fff9db', cursor: 'pointer', fontSize: 11, color: '#856404',
+                        }}>Cancel</button>
+                      ) : (
+                        <button onClick={() => previewVersion(v.elements!, v.version)} style={{
+                          padding: '2px 8px', borderRadius: 3, border: '1px solid #dee2e6',
+                          background: '#fff', cursor: 'pointer', fontSize: 11, color: '#495057',
+                        }}>Preview</button>
+                      )
                     )}
                     <button onClick={() => {
                       if (v.elements) {
@@ -922,19 +949,6 @@ export default function App() {
               );
             })}
           </div>
-          {previewingVersion && (
-            <div style={{
-              padding: '10px 16px', borderTop: '1px solid #dee2e6',
-              background: '#fff9db', display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-              <span style={{ fontSize: 12, color: '#856404' }}>Previewing v{previewingVersion}</span>
-              <button onClick={cancelPreview} style={{
-                padding: '3px 10px', borderRadius: 3, border: '1px solid #856404',
-                background: 'transparent', color: '#856404', cursor: 'pointer', fontSize: 11,
-              }}>Cancel preview</button>
-            </div>
-          )}
         </div>
       )}
 
