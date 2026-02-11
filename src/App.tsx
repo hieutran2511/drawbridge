@@ -101,8 +101,8 @@ function playPencilSound(type: string) {
 const IDB_NAME = 'drawbridge-history';
 const IDB_STORE = 'versions';
 const IDB_VERSION = 1;
-const MAX_VERSIONS_PER_SESSION = 120; // ~2 hours at 1-min throttle
-const VERSION_SAVE_THROTTLE_MS = 60_000; // 1 minute
+const MAX_VERSIONS_PER_SESSION = 24; // ~2 hours at 5-min interval
+const VERSION_SAVE_THROTTLE_MS = 5 * 60_000; // 5 minutes
 
 interface VersionEntry {
   id?: number; // auto-increment key
