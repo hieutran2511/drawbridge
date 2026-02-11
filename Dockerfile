@@ -8,6 +8,8 @@ RUN npm ci --production=false
 
 # Copy source and build frontend
 COPY . .
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=${BUILD_VERSION}
 RUN npm run build
 
 # Prune devDependencies after build

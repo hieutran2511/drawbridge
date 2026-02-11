@@ -2,11 +2,31 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Excalidraw, convertToExcalidrawElements } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
 
+declare const __APP_VERSION__: string;
+
 // Get session ID from URL hash or generate one
 function getSessionId(): string {
   const hash = window.location.hash.slice(1);
   if (hash) return hash;
   return 'default';
+}
+
+// Persistent client ID + editable name
+function getClientId(): string {
+  let id = localStorage.getItem('drawbridge:client-id');
+  if (!id) {
+    id = Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('drawbridge:client-id', id);
+  }
+  return id;
+}
+
+function getClientName(): string {
+  return localStorage.getItem('drawbridge:client-name') || '';
+}
+
+function setClientName(name: string) {
+  localStorage.setItem('drawbridge:client-name', name);
 }
 
 // Font preloading — ensure Excalidraw fonts are ready before text measurement
@@ -296,6 +316,8 @@ export default function App() {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [connected, setConnected] = useState(false);
   const [sessionId] = useState(getSessionId);
+  const [clientId] = useState(getClientId);
+  const [clientName, setClientNameState] = useState(getClientName);
   const [status, setStatus] = useState('Connecting...');
   const wsRef = useRef<WebSocket | null>(null);
   const isRemoteUpdate = useRef(false);
@@ -947,12 +969,25 @@ export default function App() {
           color: connected ? '#2f9e44' : '#c92a2a',
           padding: '4px 12px',
           borderRadius: 6,
-          fontSize: 12,
+          fontSize: 11,
           fontFamily: 'system-ui',
           border: `1px solid ${connected ? '#b2f2bb' : '#ffc9c9'}`,
+          display: 'flex', alignItems: 'center', gap: 8,
         }}
       >
-        {status}
+        <span>{status}</span>
+        <span style={{ opacity: 0.6 }}>|</span>
+        <span
+          onClick={() => {
+            const name = prompt('Set your name (visible to collaborators):', clientName);
+            if (name !== null) { setClientName(name); setClientNameState(name); }
+          }}
+          style={{ cursor: 'pointer', borderBottom: '1px dashed currentColor' }}
+          title="Click to set your name"
+        >
+          {clientName || clientId}
+        </span>
+        <span style={{ opacity: 0.4, fontSize: 10 }}>v{__APP_VERSION__}</span>
       </div>
 
       <Excalidraw
