@@ -311,6 +311,7 @@ export default function App() {
   // Version history panel
   const [showHistory, setShowHistory] = useState(false);
   const [historyEntries, setHistoryEntries] = useState<VersionEntry[]>([]);
+  // Server versions fetched but reserved for disaster recovery, not shown in UI
   const [serverVersions, setServerVersions] = useState<any[]>([]);
   const [previewingVersion, setPreviewingVersion] = useState<number | null>(null);
   const previewOriginalElements = useRef<any[] | null>(null);
@@ -742,18 +743,8 @@ export default function App() {
       });
     }
 
-    for (const sv of serverVersions) {
-      // Skip if we already have a client entry within 2s of this timestamp
-      const hasDupe = historyEntries.some(e => Math.abs(e.timestamp - sv.timestamp) < 2000);
-      if (!hasDupe) {
-        merged.push({
-          timestamp: sv.timestamp,
-          elementCount: sv.elementCount,
-          source: 'server-backup',
-          serverTimestamp: sv.timestamp,
-        });
-      }
-    }
+    // Server-only backups are kept for disaster recovery but hidden from the UI
+    // since they can't be previewed and would be confusing to show
 
     merged.sort((a, b) => b.timestamp - a.timestamp);
     return merged;
