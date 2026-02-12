@@ -417,6 +417,7 @@ app.post('/api/session/:id/elements', (req, res) => {
     elements: session.elements,
     appState: session.appState,
     version: session._version,
+    source: 'api',
   });
 
   // Send viewport updates (use last one as the final camera position)
@@ -680,6 +681,9 @@ wss.on('connection', (ws, request) => {
         session.elements = msg.elements;
         session._version++;
         session._dirty = true;
+
+        // Acknowledge accepted update so client keeps version current
+        ws.send(JSON.stringify({ type: 'ack', version: session._version }));
 
         // Track who made this edit
         const editorInfo = {

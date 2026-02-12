@@ -70,6 +70,11 @@ async function sanitizeElements(elements: any[]): Promise<any[]> {
   }
 }
 
+// Fingerprint elements by id:version for conflict detection
+function elementFingerprint(elements: any[]): string {
+  return elements.map((el: any) => `${el.id}:${el.version || 0}`).sort().join(',');
+}
+
 // Simple pencil stroke sound using Web Audio API
 let audioCtx: AudioContext | null = null;
 function getAudioContext(): AudioContext | null {
@@ -328,6 +333,7 @@ export default function App() {
   const reconnectTimer = useRef<number | null>(null);
   const lastElementCount = useRef(0);
   const serverVersion = useRef(0);
+  const lastAppliedFingerprint = useRef('');
   const [cachedElements, setCachedElements] = useState<any[] | null>(null);
 
   // Conflict resolution state
@@ -472,20 +478,20 @@ export default function App() {
               if (msg.version !== undefined) serverVersion.current = msg.version;
               const serverElements = await sanitizeElements(msg.elements);
 
-              // Only check for conflicts on the first elements message after (re)connect
-              // Normal collaborative updates should apply silently
-              const shouldCheckConflict = isFirstElementsMsg && !msg.source;
+              // Check for conflicts on initial connect and API pushes
+              // Skip version-corrections, restores, and collaborative WS edits
+              const shouldCheckConflict = isFirstElementsMsg || msg.source === 'api';
               isFirstElementsMsg = false;
 
               let hasConflict = false;
               let localElements: any[] = [];
               if (shouldCheckConflict) {
                 localElements = api.getSceneElements().filter((el: any) => !el.isDeleted);
-                // Compare id:version pairs to catch both structural AND content changes
-                // (e.g., moved shapes, edited text — same IDs but different versions)
-                const localFingerprint = localElements.map((el: any) => `${el.id}:${el.version || 0}`).sort().join(',');
-                const serverFingerprint = serverElements.map((el: any) => `${el.id}:${el.version || 0}`).sort().join(',');
-                hasConflict = localFingerprint !== serverFingerprint && localElements.length > 0;
+                const localFp = elementFingerprint(localElements);
+                const serverFp = elementFingerprint(serverElements);
+                // Only conflict if user has unsaved local changes that differ from incoming state
+                const hasLocalChanges = localFp !== lastAppliedFingerprint.current;
+                hasConflict = hasLocalChanges && localFp !== serverFp && localElements.length > 0;
               }
 
               if (hasConflict) {
@@ -507,6 +513,7 @@ export default function App() {
                 if (msg.appState) {
                   api.updateScene({ appState: msg.appState });
                 }
+                lastAppliedFingerprint.current = elementFingerprint(serverElements);
                 const prevCount = lastElementCount.current;
                 for (let i = prevCount; i < serverElements.length; i++) {
                   playPencilSound(serverElements[i].type || 'rectangle');
@@ -535,6 +542,7 @@ export default function App() {
               const clean = await sanitizeElements(msg.elements);
               const allElements = [...current, ...clean];
               api.updateScene({ elements: allElements });
+              lastAppliedFingerprint.current = elementFingerprint(allElements as any[]);
               for (const el of clean) {
                 playPencilSound(el.type || 'rectangle');
               }
@@ -578,9 +586,12 @@ export default function App() {
               isRemoteUpdate.current = true;
               api.resetScene();
               lastElementCount.current = 0;
+              lastAppliedFingerprint.current = '';
               knownFileIds.current.clear();
               clearStorage(sessionId);
               setTimeout(() => { isRemoteUpdate.current = false; }, 100);
+            } else if (msg.type === 'ack') {
+              if (msg.version !== undefined) serverVersion.current = msg.version;
             }
           } catch (err) {
             console.error('WebSocket message error:', err);
@@ -660,6 +671,7 @@ export default function App() {
     isRemoteUpdate.current = true;
     excalidrawAPI.updateScene({ elements });
     lastElementCount.current = elements.length;
+    lastAppliedFingerprint.current = elementFingerprint(elements);
     saveToStorage(sessionId, elements);
     versionHistory.saveVersion(sessionId, elements, 'restored');
 
@@ -759,6 +771,7 @@ export default function App() {
       isRemoteUpdate.current = true;
       excalidrawAPI.updateScene({ elements });
       lastElementCount.current = elements.length;
+      lastAppliedFingerprint.current = elementFingerprint(elements);
       saveToStorage(sessionId, elements);
       await versionHistory.saveVersion(sessionId, elements, 'restored', fromVersion);
 
